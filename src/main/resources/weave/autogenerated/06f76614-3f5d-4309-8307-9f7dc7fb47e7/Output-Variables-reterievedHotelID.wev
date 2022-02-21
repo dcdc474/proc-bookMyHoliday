@@ -1,0 +1,4 @@
+%dw 2.0
+
+type auto_06f76614_3f5d_4309_8307_9f7dc7fb47e7_Output_Variables_reterievedHotelID = Number | Null
+

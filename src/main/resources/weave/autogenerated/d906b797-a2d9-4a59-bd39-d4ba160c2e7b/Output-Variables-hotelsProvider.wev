@@ -1,0 +1,4 @@
+%dw 2.0
+
+type auto_d906b797_a2d9_4a59_bd39_d4ba160c2e7b_Output_Variables_hotelsProvider = String | Null
+

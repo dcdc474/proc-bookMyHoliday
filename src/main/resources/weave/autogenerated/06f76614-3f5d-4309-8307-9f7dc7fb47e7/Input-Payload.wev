@@ -1,0 +1,11 @@
+%dw 2.0
+
+type auto_06f76614_3f5d_4309_8307_9f7dc7fb47e7_Input_Payload = {
+  clientId: Number, 
+  flightId: Number, 
+  ID: Number, 
+  hotelId: Number, 
+  carId: Number, 
+  _?: Any
+}
+

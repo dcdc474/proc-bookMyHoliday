@@ -1,0 +1,4 @@
+%dw 2.0
+
+type auto_f3946093_7175_415a_862d_de2bd8e0ff8d_Input_Variables_uriBookingID = String | Null
+

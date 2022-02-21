@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:cars-sys="http://www.mulesoft.org/schema/mule/cars-sys" xmlns:sys-bookings-info="http://www.mulesoft.org/schema/mule/sys-bookings-info"
+	xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc"
+	xmlns:jms="http://www.mulesoft.org/schema/mule/jms" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:sys-indigo-flights="http://www.mulesoft.org/schema/mule/sys-indigo-flights" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/sys-indigo-flights http://www.mulesoft.org/schema/mule/sys-indigo-flights/current/mule-sys-indigo-flights.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd
+http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd
+http://www.mulesoft.org/schema/mule/sys-bookings-info http://www.mulesoft.org/schema/mule/sys-bookings-info/current/mule-sys-bookings-info.xsd
+http://www.mulesoft.org/schema/mule/cars-sys http://www.mulesoft.org/schema/mule/cars-sys/current/mule-cars-sys.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="0fd3963a-7556-44e7-9bd1-70a18a4977a8" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="418011bd-0add-4128-90d0-d9632d9c09c6" basePath="Hotel_x0020_Booking_x0020_API_x0020_Spec/default_Port?wsdl" >
+		<http:request-connection host="dc-taj-hotel-dc01.us-e2.cloudhub.io/"/>
+	</http:request-config>
+	<sub-flow name="GetCarByCity" doc:id="5b53d91b-e034-4e6e-aec4-893eb432cc55" >
+		<cars-sys:get-cars doc:name="Get cars" doc:id="54fa42d7-1f83-4cef-9e22-c7737ba42fa8" config-ref="Cars_sys_Config" city="#[payload.City]" date="#[payload.Date]"/>
+	</sub-flow>
+	<sub-flow name="GetJSONHotels" doc:id="d997f487-0397-406f-bc40-1e672b1d29ab" >
+		<ee:transform doc:name="Transform Message" doc:id="1ae3682a-5de0-414d-8400-28b66fdbd2f1">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/xml
+ns ns0 https://www.example.com/schemas
+---
+{
+	ns0#GET_Hotels_GET_InputMessage: {
+		city: attributes.queryParams.city
+	}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<wsc:consume operation="GET_Hotels_GET" doc:name="Consume" doc:id="ff40bc5c-734a-47eb-ae0d-43632a3ba10f" config-ref="Web_Service_Consumer_Config" />
+		<ee:transform doc:name="Transform Message" doc:id="ad7148a5-bfc1-4151-b12e-0114e6d13e9b">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+ns ns0 https://www.example.com/schemas
+---
+payload.body.ns0#GET_Hotels_GET_OutputMessage.*response200 map ( response200 , indexOfResponse200 ) -> {
+	Price: response200.price default 0,
+	Rating: response200.ratings default 0,
+	ID: response200.ID,
+	HotelName: response200.name default "",
+	City: response200.city default ""
+}
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+	<flow name="GetFlights" doc:id="a62fcd4b-9cd3-4fed-95c1-145239268767" >
+		<set-variable value="#[attributes.queryParams.provider]" doc:name="Set Variable" doc:id="0c941b1c-865f-4334-97a0-fe5e1ce0a378" variableName="flightProvider"/>
+		<logger level="INFO" doc:name="Logger" doc:id="84991ad6-ee00-4565-8352-d2de571f84d4" message="#[vars.flightProvider]"/>
+		<choice doc:name="Choice" doc:id="566e4a68-3798-44e6-a1a6-36ffacd585bf" >
+			<when expression="#[vars.flightProvider=='ING']">
+				<sys-indigo-flights:get-flights doc:name="Get flights" doc:id="428a96c9-9ea9-4787-9b4a-53370fd27b5c" config-ref="Sys_indigo_flights_Config" origin='#[attributes.queryParams.origin default ""]' destination='#[attributes.queryParams.destination default ""]' date='#[attributes.queryParams.date default "1990-01-01"]'/>
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="Logger" doc:id="35cc7df7-01d1-4c19-a2e9-38fe3dfcc1ea" message="Default workflow of getFlights started" category="Process API: Default workflow execution started.."/>
+				<scatter-gather doc:name="Scatter-Gather" doc:id="6ee9eee9-0f76-4cdd-b27e-b6ead18e086b" >
+					<route >
+						<sys-indigo-flights:get-flights doc:name="Get flights" doc:id="d629bd69-e3aa-4024-a78d-81033cbd4317" config-ref="Sys_indigo_flights_Config" origin='#[attributes.queryParams.origin default ""]' destination='#[attributes.queryParams.destination default ""]' date='#[attributes.queryParams.date default "1990-01-01"]'/>
+					</route>
+					<route >
+						<logger level="INFO" doc:name="Logger" doc:id="d026d782-ba39-4962-8d26-13d34b910f83" />
+					</route>
+				</scatter-gather>
+				<ee:transform doc:name="Transform Message" doc:id="6a477798-94f3-4267-90ce-960926c97361" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+flatten(payload..payload)]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+		<logger level="INFO" doc:name="Logger" doc:id="30fb48fb-c194-4de7-82f2-d99ae914677c" message="End of Process API"/>
+	</flow>
+	<flow name="GetHotels" doc:id="dabcb112-7c5a-4543-b445-31b52f8f91e6" >
+		<set-variable value="#[attributes.queryParams.provider]" doc:name="Set Variable" doc:id="298a84db-a9d3-4203-8f92-8d0a065b83ac" variableName="hotelsProvider"/>
+		<logger level="INFO" doc:name="Logger" doc:id="780d7d4b-4f87-41cd-96eb-9c06e27326bc" message="#[vars.hotelsProvider]"/>
+		<choice doc:name="Choice" doc:id="e2c8a610-7208-4e44-9970-4fce6f6f58b9" >
+			<when expression="#[vars.hotelsProvider=='TAJ']">
+				<flow-ref doc:name="Flow Reference" doc:id="3cb52bb1-4438-4f1f-aeae-080d05bbdb18" name="GetJSONHotels"/>
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="Logger" doc:id="14249fea-5fc0-4f65-8c0a-a11fbdcb18d4" />
+				<scatter-gather doc:name="Scatter-Gather" doc:id="5e15d8a7-7ef6-49b6-8e2c-26c8b58c57c8" >
+					<route >
+						<flow-ref doc:name="Flow Reference" doc:id="5f505cb2-0417-46ef-87fd-cec720913f37" name="GetJSONHotels"/>
+					</route>
+					<route >
+						<logger level="INFO" doc:name="Logger" doc:id="2a45df64-a2a9-4d6b-b90d-a2d284f91e4a" />
+					</route>
+				</scatter-gather>
+				<ee:transform doc:name="Transform Message" doc:id="b514c3ad-cda0-420f-b9bd-88cae9c71bf3" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+flatten(payload..payload)]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+		<logger level="INFO" doc:name="Logger" doc:id="1201bb2d-0e45-4fdf-8eae-02a2c4261b74" />
+	</flow>
+	<flow name="PostBooking" doc:id="c4a0cc02-d805-4588-88a0-03e5f577933b" >
+		<logger level="INFO" doc:name="Logger" doc:id="119d8472-e076-42a3-91d3-c40320c183e4" />
+		<sys-bookings-info:create-booking doc:name="Create booking" doc:id="d0cf1489-1721-40b4-9c4d-f233dc01cb62" config-ref="Sys_Bookings_info_Config"/>
+		<logger level="INFO" doc:name="Logger" doc:id="88f0bc85-5fb6-470d-b1d5-0c33ff6eeed4" />
+	</flow>
+	<flow name="GetBookingByID" doc:id="d906b797-a2d9-4a59-bd39-d4ba160c2e7b" >
+		<logger level="INFO" doc:name="Logger" doc:id="d3d5a0e2-6c12-442b-a0b3-4897c0a1edd3" />
+		<sys-bookings-info:get-booking-by-id doc:name="Get booking by id" doc:id="48ef0be4-544b-4863-8ec9-22a5e1883c53" config-ref="Sys_Bookings_info_Config" id="#[attributes.uriParams.ID]"/>
+		<logger level="INFO" doc:name="Logger" doc:id="712c80c3-eca8-4d67-8125-98e149eb4a09" />
+	</flow>
+	<flow name="UpdateBookingByID" doc:id="f3946093-7175-415a-862d-de2bd8e0ff8d" >
+		<logger level="INFO" doc:name="Logger" doc:id="3c7b2b92-6524-4ab1-a3e6-a4cd576aaf39" />
+		<sys-bookings-info:update-booking-by-id doc:name="Update booking by id" doc:id="d2ca6430-fdd6-4d1f-a1ef-a3e9916f31d1" config-ref="Sys_Bookings_info_Config" id="#[attributes.uriParams.ID]"/>
+		<logger level="INFO" doc:name="Logger" doc:id="56ad4349-7799-4982-be5e-e5464db95dd7" />
+	</flow>
+	<flow name="DeleteBookingByID" doc:id="84029944-15c4-4f49-81ee-b9188730d7ad" >
+		<logger level="INFO" doc:name="Logger" doc:id="68f2e7c7-55f4-4dec-b90d-497347ff072a" />
+		<sys-bookings-info:delete-booking-by-id doc:name="Delete booking by id" doc:id="cb152223-9d31-4d41-aa8f-6a8b3151cdc2" config-ref="Sys_Bookings_info_Config" id="#[attributes.uriParams.ID]"/>
+		<logger level="INFO" doc:name="Logger" doc:id="a5085d52-729b-4f1e-a7dd-e6b00c85944e" />
+	</flow>
+	<flow name="BookHotel" doc:id="06f76614-3f5d-4309-8307-9f7dc7fb47e7" >
+		<set-variable value="#[attributes.uriParams.ID]" doc:name="Set Variable" doc:id="804555d8-2916-4071-929a-63d2bfffaf6e" variableName="uriBookingID"/>
+		<flow-ref doc:name="Flow Reference" doc:id="def0fb93-6a09-4d01-b2f1-72378b32f06b" name="GetHotels"/>
+		<set-payload value="#[payload[0]]" doc:name="Set Payload" doc:id="b6175698-f165-476e-8fe4-49317ac8ec8e" />
+		<set-variable value="#[payload.ID]" doc:name="Set Variable" doc:id="13f8668c-0996-4a73-bee7-8dafb66e2e54" variableName="reterievedHotelID"/>
+		<choice doc:name="Choice" doc:id="30c8a486-a0bc-482c-874a-e0e71bc99532" >
+			<when expression="#[payload.City=='AUS' or payload.City=='BOS']">
+				<flow-ref doc:name="Flow Reference" doc:id="05421947-2865-4b6a-b352-4e7278fd7b97" name="GetCarByCity"/>
+				<ee:transform doc:name="Transform Message" doc:id="e541d27c-d443-4192-9faa-1c8dee4a3e8d" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload filter($.provider=="ola") map((payload,index)->
+{
+	"date": payload.date,
+    "number": payload.number,
+    "carType": payload.carType,
+    "code": payload.code,
+    "city": payload.city,
+    "provider": payload.provider,
+    "ID": payload.ID
+}
+)]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+			<otherwise >
+				<flow-ref doc:name="Flow Reference" doc:id="14b5179c-f42a-41a1-9e7f-276dcde8db27" name="GetCarByCity"/>
+				<ee:transform doc:name="Transform Message" doc:id="d4e10f09-7226-43c4-b76e-dc3da275cede" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload filter($.provider=="uber") map((payload,index)->
+{
+	"date": payload.date,
+    "number": payload.number,
+    "carType": payload.carType,
+    "code": payload.code,
+    "city": payload.city,
+    "provider": payload.provider,
+    "ID": payload.ID
+}
+)]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+		<set-payload value="#[payload[0]]" doc:name="Set Payload" doc:id="dd2effee-62f7-46c3-bc9d-e7ab45605e9d" />
+		<set-variable value="#[payload.ID]" doc:name="Set Variable" doc:id="971c839f-3142-43d4-aa2b-adb56f787d6e" variableName="carBookingID"/>
+		<flow-ref doc:name="Flow Reference" doc:id="95d9865e-22ac-4f3a-9009-fc7f75e066fc" name="GetBookingByID"/>
+		<ee:transform doc:name="Transform Message" doc:id="90e7bf77-1ee1-4632-80ed-676796282327" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  ID: vars.uriBookingID,
+  clientId: 200,
+  flightId: payload.flightId,
+  hotelId: vars.reterievedHotelID,
+  carId: vars.carBookingID 
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<flow-ref doc:name="Flow Reference" doc:id="321a9c83-9a0f-4834-bcd2-c0965f726ef2" name="UpdateBookingByID"/>
+		<logger level="INFO" doc:name="Logger" doc:id="9481290e-1b02-49fc-bd36-9035373ea5f6" message="#[payload]"/>
+	</flow>
+</mule>

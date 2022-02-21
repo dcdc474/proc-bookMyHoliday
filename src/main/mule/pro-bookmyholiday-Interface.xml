@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd ">
+    <apikit:config name="pro-bookmyholiday-config" api="resource::2f8dce0e-4fb6-42d2-ab96-8f6b2c8f4947:pro-bookmyholiday:1.0.1:raml:zip:pro-bookmyholiday.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <flow name="pro-bookmyholiday-main">
+        <http:listener config-ref="HTTP_Listener_config" path="/api/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="pro-bookmyholiday-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:BAD_REQUEST">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Bad request"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">400</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:METHOD_NOT_ALLOWED">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Method not allowed"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">405</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_ACCEPTABLE">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not acceptable"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">406</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:UNSUPPORTED_MEDIA_TYPE">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Unsupported media type"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">415</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_IMPLEMENTED">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not Implemented"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">501</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="pro-bookmyholiday-console">
+        <http:listener config-ref="HTTP_Listener_config" path="/console/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="pro-bookmyholiday-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+	<flow name="put:\bookings\bookingId:application\json:pro-bookmyholiday-config">
+		<flow-ref doc:name="Flow Reference" doc:id="b8d0a6de-2f2a-4178-8676-19857246f439" name="UpdateBookingByID"/>
+    </flow>
+    <flow name="put:\bookHotel\(ID):application\json:pro-bookmyholiday-config">
+		<flow-ref doc:name="Flow Reference" doc:id="2e8bf3a2-c32a-4621-8ce8-f61a39daf8d2" name="BookHotel"/>
+    </flow>
+    <flow name="delete:\bookings\bookingId:pro-bookmyholiday-config">
+		<flow-ref doc:name="Flow Reference" doc:id="2b584442-cb34-4088-9eaa-56dcf6d78dcf" name="DeleteBookingByID"/>
+    </flow>
+    <flow name="get:\bookings\bookingId:pro-bookmyholiday-config">
+		<flow-ref doc:name="Flow Reference" doc:id="50daee89-dcd6-430a-90c2-d0bb3d44e062" name="GetBookingByID"/>
+    </flow>
+    <flow name="get:\flights:pro-bookmyholiday-config">
+		<flow-ref doc:name="Flow Reference" doc:id="b5d9cd8a-704f-472b-9e71-b29a025d5716" name="GetFlights"/>
+    </flow>
+    <flow name="get:\hotels:pro-bookmyholiday-config">
+		<flow-ref doc:name="Flow Reference" doc:id="0f0a0cfe-3a5f-4453-8dbb-a02e28e8acfc" name="GetHotels"/>
+    </flow>
+    <flow name="get:\flights\(flightid):pro-bookmyholiday-config">
+		<logger level="INFO" doc:name="Logger" doc:id="4cafb139-1849-4060-93b0-df9bacf2cc45" message="Reterieve flight"/>
+    </flow>
+    <flow name="get:\hotels\(hotelid):pro-bookmyholiday-config">
+        <ee:transform>
+            <ee:variables>
+                <ee:set-variable variableName="hotelid">attributes.uriParams.'hotelid'</ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <logger level="INFO" message="get:\hotels\(hotelid):pro-bookmyholiday-config" />
+    </flow>
+    <flow name="post:\bookings:application\json:pro-bookmyholiday-config">
+		<flow-ref doc:name="Flow Reference" doc:id="43c3e186-1008-436d-a82d-6a23cbcf2a4c" name="PostBooking"/>
+    </flow>
+</mule>

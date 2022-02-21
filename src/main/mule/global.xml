@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:cars-sys="http://www.mulesoft.org/schema/mule/cars-sys" xmlns:sys-bookings-info="http://www.mulesoft.org/schema/mule/sys-bookings-info"
+	xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc"
+	xmlns:sys-indigo-flights="http://www.mulesoft.org/schema/mule/sys-indigo-flights" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/sys-indigo-flights http://www.mulesoft.org/schema/mule/sys-indigo-flights/current/mule-sys-indigo-flights.xsd
+http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd
+http://www.mulesoft.org/schema/mule/sys-bookings-info http://www.mulesoft.org/schema/mule/sys-bookings-info/current/mule-sys-bookings-info.xsd
+http://www.mulesoft.org/schema/mule/cars-sys http://www.mulesoft.org/schema/mule/cars-sys/current/mule-cars-sys.xsd">
+	<sys-indigo-flights:config name="Sys_indigo_flights_Config" doc:name="Sys-indigo-flights Config" doc:id="8367c1f5-eb1e-4166-b8fe-3d940e6e6286" property_host="${sysIndigoflights.host}" property_port="${sysIndigoflights.port}" property_protocol="${sysIndigoflights.protocol}" property_basePath="${sysIndigoflights.basePath}"/>
+	<configuration-properties doc:name="Configuration properties" doc:id="b6980766-c654-4ae8-b8cc-16b0b111f327" file="config.yaml" />
+	<wsc:config name="Web_Service_Consumer_Config" doc:name="Web Service Consumer Config" doc:id="dacada2e-b3db-4e01-a932-2b5901678358" >
+		<wsc:connection wsdlLocation="${sysHotels.wsdl}" service="${sysHotels.service}" port="${sysHotels.port}" address="${sysHotels.address}" />
+	</wsc:config>
+	<sys-bookings-info:config name="Sys_Bookings_info_Config" doc:name="Sys-Bookings-info Config" doc:id="2946b7e7-0884-46e0-8385-f8d0bc93504c" property_host="${sysBookings.host}" property_port="${sysBookings.port}" property_protocol="${sysBookings.protocol}" property_basePath="${sysBookings.basePath}" />
+	<cars-sys:config name="Cars_sys_Config" doc:name="Cars-sys Config" doc:id="f0d75185-6ad2-4137-b3cf-57214012f02d" property_host="${sysCars.host}" property_port="${sysCars.port}" property_protocol="${sysCars.protocol}" property_basePath="${sysCars.basePath}" />
+</mule>

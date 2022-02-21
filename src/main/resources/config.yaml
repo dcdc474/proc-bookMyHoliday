@@ -1,0 +1,25 @@
+sysIndigoflights:
+  host: "indigo-flights-sys-dc002.us-e2.cloudhub.io"
+  port: "80"
+  protocol: "HTTP"
+  basePath: "/api/"
+  
+sysHotels:
+  wsdl: "http://dc-taj-hotel-dc01.us-e2.cloudhub.io/Hotel_x0020_Booking_x0020_API_x0020_Spec/default_Port?wsdl"
+  service: "Hotel_x0020_Booking_x0020_API_x0020_Spec"
+  port: "default_Port"
+  address: "http://dc-taj-hotel-dc01.us-e2.cloudhub.io/Hotel_x0020_Booking_x0020_API_x0020_Spec/default_Port"
+
+sysBookings:
+  host: "dc-bookings-sys-001.us-e2.cloudhub.io"
+  port: "80"
+  protocol: "HTTP"
+  basePath: "/api/"
+
+sysCars:
+  host: "provider-cars-sys-dc01.us-e2.cloudhub.io"
+  port: "80"
+  protocol: "HTTP"
+  basePath: "/api/"
+
+  

@@ -1,0 +1,4 @@
+%dw 2.0
+
+type auto_dabcb112_7c5a_4543_b445_31b52f8f91e6_Output_Payload = Array<{|  Price: Number,   Rating: Number,   ID: Number | Null,   HotelName: String,   City: String|}> | Null
+
